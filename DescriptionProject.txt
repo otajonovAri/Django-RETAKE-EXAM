@@ -1,0 +1,7 @@
+20. Dunyo shaharlari ma'lumotnomasi
+○ Nima qilish kerak: Shaharlar ma'lumotini qo'shish, ko'rish, 
+o'zgartirish va o'chirish. Har bir shaharning nomi, aholisi va 
+mamlakati bo'ladi.
+○ Qo'shimcha shart: Shaharlarni mamlakati bo'yicha ajratib 
+ko'rsatish imkoniyati bo'lsin (filtratsiya).
+○ Veb-ko'rinish: Ro'yxat jadval ko'rinishida chiqsin.
