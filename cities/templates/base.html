@@ -1,0 +1,44 @@
+{% load static %}<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dunyo shaharlari ma'lumotnomasi{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="brand" href="{% url 'cities:list' %}">
+        <span class="brand__icon">🌍</span>
+        <span>Dunyo shaharlari</span>
+      </a>
+      <nav class="nav">
+        <a href="{% url 'cities:list' %}">Shaharlar</a>
+        <a href="{% url 'cities:country_list' %}">Mamlakatlar</a>
+        <a href="/admin/">Admin</a>
+        <a class="btn btn--primary" href="{% url 'cities:create' %}">+ Shahar qo'shish</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="message message--{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      Dunyo shaharlari ma'lumotnomasi &middot; Django {% now "Y" %}
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{{ city.name }} — o'chirish{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>Shaharni o'chirish</h1>
+</div>
+
+<div class="card">
+  <p>
+    <strong>«{{ city.name }}»</strong> ({{ city.country.name }}) shahrini
+    o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.
+  </p>
+
+  <form method="post" class="form__actions">
+    {% csrf_token %}
+    <button class="btn btn--danger" type="submit">Ha, o'chirilsin</button>
+    <a class="btn btn--ghost" href="{% url 'cities:list' %}">Bekor qilish</a>
+  </form>
+</div>
+{% endblock %}

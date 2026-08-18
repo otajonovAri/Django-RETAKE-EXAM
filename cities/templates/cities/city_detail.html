@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}{{ city.name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>{{ city.name }} {% if city.is_capital %}<span class="badge">Poytaxt</span>{% endif %}</h1>
+  <p class="muted">
+    <a href="{% url 'cities:list' %}?country={{ city.country.pk }}" class="link-strong">{{ city.country.name }}</a>
+    {% if city.country.code %}({{ city.country.code }}){% endif %}
+  </p>
+</div>
+
+<div class="card">
+  <dl class="detail">
+    <dt>Shahar nomi</dt><dd>{{ city.name }}</dd>
+    <dt>Mamlakat</dt><dd>{{ city.country.name }}</dd>
+    <dt>Aholisi</dt><dd>{{ city.population|floatformat:0 }} kishi</dd>
+    <dt>Poytaxt</dt><dd>{% if city.is_capital %}Ha{% else %}Yo'q{% endif %}</dd>
+    <dt>Qo'shilgan</dt><dd>{{ city.created_at|date:"d.m.Y H:i" }}</dd>
+    <dt>O'zgartirilgan</dt><dd>{{ city.updated_at|date:"d.m.Y H:i" }}</dd>
+  </dl>
+
+  <div class="form__actions">
+    <a class="btn btn--primary" href="{% url 'cities:update' city.pk %}">Tahrirlash</a>
+    <a class="btn btn--danger" href="{% url 'cities:delete' city.pk %}">O'chirish</a>
+    <a class="btn btn--ghost" href="{% url 'cities:list' %}">Ro'yxatga qaytish</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Shaharlar ro'yxati{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>Shaharlar ro'yxati</h1>
+  <p class="muted">Shaharlarni mamlakati bo'yicha filtrlab, jadval ko'rinishida ko'ring.</p>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <span class="stat__value">{{ total_cities }}</span>
+    <span class="stat__label">{% if is_filtered %}Topilgan shaharlar{% else %}Jami shaharlar{% endif %}</span>
+  </div>
+  <div class="stat">
+    <span class="stat__value">{{ total_population|floatformat:0 }}</span>
+    <span class="stat__label">Umumiy aholi</span>
+  </div>
+  <div class="stat">
+    <span class="stat__value">{{ countries|length }}</span>
+    <span class="stat__label">Mamlakatlar</span>
+  </div>
+</div>
+
+<form class="filters" method="get" action="{% url 'cities:list' %}">
+  <div class="filters__field">
+    <label for="country">Mamlakat bo'yicha filtr</label>
+    <select class="input" name="country" id="country" onchange="this.form.submit()">
+      <option value="">— Barcha mamlakatlar —</option>
+      {% for country in countries %}
+        <option value="{{ country.pk }}" {% if selected_country == country.pk|stringformat:"s" %}selected{% endif %}>
+          {{ country.name }} ({{ country.city_count }})
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="filters__field">
+    <label for="q">Qidiruv</label>
+    <input class="input" type="search" name="q" id="q" value="{{ query }}" placeholder="Shahar yoki mamlakat nomi">
+  </div>
+
+  {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+
+  <div class="filters__actions">
+    <button class="btn btn--primary" type="submit">Filtrlash</button>
+    {% if is_filtered %}
+      <a class="btn btn--ghost" href="{% url 'cities:list' %}">Tozalash</a>
+    {% endif %}
+  </div>
+</form>
+
+{% if cities %}
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>
+          <a href="?{% if selected_country %}country={{ selected_country }}&amp;{% endif %}{% if query %}q={{ query }}&amp;{% endif %}sort={% if sort == 'name' %}-name{% else %}name{% endif %}">
+            Shahar nomi {% if sort == 'name' %}▲{% elif sort == '-name' %}▼{% endif %}
+          </a>
+        </th>
+        <th>
+          <a href="?{% if selected_country %}country={{ selected_country }}&amp;{% endif %}{% if query %}q={{ query }}&amp;{% endif %}sort={% if sort == 'country' %}-country{% else %}country{% endif %}">
+            Mamlakat {% if sort == 'country' %}▲{% elif sort == '-country' %}▼{% endif %}
+          </a>
+        </th>
+        <th class="num">
+          <a href="?{% if selected_country %}country={{ selected_country }}&amp;{% endif %}{% if query %}q={{ query }}&amp;{% endif %}sort={% if sort == '-population' %}population{% else %}-population{% endif %}">
+            Aholisi {% if sort == 'population' %}▲{% elif sort == '-population' %}▼{% endif %}
+          </a>
+        </th>
+        <th>Holati</th>
+        <th class="actions-col">Amallar</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for city in cities %}
+      <tr>
+        <td class="muted">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+        <td><a class="link-strong" href="{% url 'cities:detail' city.pk %}">{{ city.name }}</a></td>
+        <td>
+          <a class="chip" href="?country={{ city.country.pk }}">
+            {% if city.country.code %}<span class="chip__code">{{ city.country.code }}</span>{% endif %}
+            {{ city.country.name }}
+          </a>
+        </td>
+        <td class="num">{{ city.population|floatformat:0 }}</td>
+        <td>{% if city.is_capital %}<span class="badge">Poytaxt</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td class="actions-col">
+          <a class="btn btn--sm" href="{% url 'cities:update' city.pk %}">Tahrirlash</a>
+          <a class="btn btn--sm btn--danger" href="{% url 'cities:delete' city.pk %}">O'chirish</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if is_paginated %}
+<nav class="pagination">
+  {% if page_obj.has_previous %}
+    <a class="btn btn--sm" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">← Oldingi</a>
+  {% endif %}
+  <span class="muted">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a class="btn btn--sm" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Keyingi →</a>
+  {% endif %}
+</nav>
+{% endif %}
+
+{% else %}
+<div class="empty">
+  <p>{% if is_filtered %}Ushbu shart bo'yicha shahar topilmadi.{% else %}Hozircha shaharlar qo'shilmagan.{% endif %}</p>
+  <a class="btn btn--primary" href="{% url 'cities:create' %}">Birinchi shaharni qo'shish</a>
+</div>
+{% endif %}
+{% endblock %}
