@@ -1,45 +1,61 @@
 {% extends "base.html" %}
+{% load humanize %}
 
-{% block title %}Mamlakatlar{% endblock %}
+{% block title %}Mamlakatlar — Dunyo shaharlari{% endblock %}
 
 {% block content %}
 <div class="page-head">
   <h1>Mamlakatlar</h1>
-  <p class="muted">Har bir mamlakatdagi shaharlar soni va umumiy aholisi.</p>
+  <p>Har bir mamlakatdagi shaharlar soni va ularning umumiy aholisi.</p>
 </div>
 
 <div class="table-wrap">
   <table class="table">
+    <caption>Mamlakatlar jadvali — shaharlar soni bo'yicha tartiblangan.</caption>
     <thead>
       <tr>
-        <th>#</th>
-        <th>Mamlakat</th>
-        <th>Kod</th>
-        <th class="num">Shaharlar</th>
-        <th class="num">Umumiy aholi</th>
-        <th class="actions-col">Amallar</th>
+        <th scope="col"><span class="visually-hidden">Tartib raqami</span><span aria-hidden="true">#</span></th>
+        <th scope="col">Mamlakat</th>
+        <th scope="col">ISO kodi</th>
+        <th scope="col" class="num">Shaharlar</th>
+        <th scope="col" class="num">Umumiy aholi</th>
+        <th scope="col" class="col-actions">Amallar</th>
       </tr>
     </thead>
     <tbody>
       {% for country in countries %}
       <tr>
-        <td class="muted">{{ forloop.counter }}</td>
-        <td class="link-strong">{{ country.name }}</td>
-        <td>{% if country.code %}<span class="chip__code">{{ country.code }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
-        <td class="num">{{ country.city_count }}</td>
-        <td class="num">{{ country.population_sum|default:0|floatformat:0 }}</td>
-        <td class="actions-col">
-          <a class="btn btn--sm" href="{% url 'cities:list' %}?country={{ country.pk }}">Shaharlarini ko'rish</a>
+        <td class="muted num">{{ forloop.counter }}</td>
+        <th scope="row">{{ country.name }}</th>
+        <td>
+          {% if country.code %}
+            <span class="chip__code">{{ country.code }}</span>
+          {% else %}
+            <span class="muted">Kiritilmagan</span>
+          {% endif %}
+        </td>
+        <td class="num">{{ country.city_count|intcomma }}</td>
+        <td class="num">{{ country.population_sum|default:0|intcomma }}</td>
+        <td class="col-actions">
+          <div class="row-actions">
+            <a class="btn btn--sm" href="{% url 'cities:list' %}?country={{ country.pk }}">
+              Shaharlari<span class="visually-hidden">: {{ country.name }}</span>
+            </a>
+          </div>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" class="muted">Mamlakatlar qo'shilmagan.</td></tr>
+      <tr>
+        <td colspan="6" class="muted">Mamlakatlar hali qo'shilmagan.</td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
 <div class="form__actions">
-  <a class="btn btn--primary" href="{% url 'cities:country_create' %}">+ Mamlakat qo'shish</a>
+  <a class="btn btn--primary" href="{% url 'cities:country_create' %}">
+    <span aria-hidden="true">+</span> Mamlakat qo'shish
+  </a>
 </div>
 {% endblock %}

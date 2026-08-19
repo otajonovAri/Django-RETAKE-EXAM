@@ -1,26 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ title }} — Dunyo shaharlari{% endblock %}
 
 {% block content %}
 <div class="page-head">
   <h1>{{ title }}</h1>
+  <p>Yulduzcha (<span class="req" aria-hidden="true">*</span>) bilan belgilangan maydonlar majburiy.</p>
 </div>
 
-<form class="card form" method="post" novalidate>
+<form class="card form" method="post">
   {% csrf_token %}
 
-  {% if form.non_field_errors %}
-    <div class="message message--error">{{ form.non_field_errors }}</div>
+  {% if form.errors %}
+    <div class="form-errors" role="alert" tabindex="-1" id="form-errors">
+      <h2>Formani saqlab bo'lmadi</h2>
+      <ul>
+        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+        {% for field in form %}
+          {% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
   {% endif %}
 
   {% for field in form %}
-    <div class="form__row {% if field.name == 'is_capital' %}form__row--inline{% endif %}">
-      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-      {{ field }}
-      {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
-      {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
-    </div>
+    {% include "cities/_field.html" with field=field %}
   {% endfor %}
 
   <div class="form__actions">
@@ -29,7 +33,7 @@
   </div>
 </form>
 
-<p class="muted">
+<p class="muted form-footnote">
   Mamlakat ro'yxatda yo'qmi?
   <a href="{% url 'cities:country_create' %}">Yangi mamlakat qo'shing</a>.
 </p>

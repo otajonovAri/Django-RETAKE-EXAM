@@ -1,0 +1,22 @@
+{% comment %}
+  Bitta forma maydoni. Django 5.2 widget'ga `required`, `aria-invalid` va
+  `aria-describedby` (id_X_helptext / id_X_error) atributlarini o'zi qo'shadi -
+  bu yerda faqat o'sha ID'larga mos elementlarni chiqaramiz.
+{% endcomment %}
+<div class="field{% if field.field.widget.input_type == 'checkbox' %} field--inline{% endif %}">
+  <label for="{{ field.id_for_label }}">
+    {{ field.label }}{% if field.field.required %}<span class="req" aria-hidden="true"> *</span><span class="visually-hidden"> (majburiy maydon)</span>{% endif %}
+  </label>
+
+  {{ field }}
+
+  {% if field.help_text %}
+    <p class="field__hint" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</p>
+  {% endif %}
+
+  {% if field.errors %}
+    <ul class="field__error" id="{{ field.auto_id }}_error">
+      {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+</div>

@@ -13,10 +13,17 @@ class CityForm(forms.ModelForm):
             ),
             "country": forms.Select(attrs={"class": "input"}),
             "population": forms.NumberInput(
-                attrs={"class": "input", "min": 1, "placeholder": "2900000"}
+                attrs={"class": "input", "placeholder": "2900000"}
             ),
-            "is_capital": forms.CheckboxInput(attrs={"class": "checkbox"}),
+            "is_capital": forms.CheckboxInput(),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # IntegerField.widget_attrs() min="0" qo'yadi, model esa 1 dan boshlanadi.
+        # Brauzer validatsiyasi server bilan mos bo'lishi uchun to'g'rilaymiz.
+        self.fields["population"].widget.attrs["min"] = 1
+        self.fields["country"].empty_label = "— Mamlakatni tanlang —"
 
     def clean_name(self):
         return self.cleaned_data["name"].strip()

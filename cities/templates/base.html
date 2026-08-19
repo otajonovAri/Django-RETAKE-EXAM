@@ -1,44 +1,78 @@
 {% load static %}<!DOCTYPE html>
-<html lang="uz">
+<html lang="uz" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Dunyo shaharlari ma'lumotnomasi: shaharlarni qo'shish, tahrirlash va mamlakat bo'yicha filtrlash.">
   <title>{% block title %}Dunyo shaharlari ma'lumotnomasi{% endblock %}</title>
+
+  {# Sahifa chizilishidan oldin rejimni qo'yamiz - "oq lipillash" bo'lmasligi uchun. #}
+  <script>
+    (function () {
+      var t;
+      try { t = localStorage.getItem("theme"); } catch (e) { t = null; }
+      if (!t) {
+        t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
+
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>">
 </head>
 <body>
+  <a class="skip-link" href="#main">Asosiy kontentga o'tish</a>
+
   <header class="topbar">
     <div class="container topbar__inner">
       <a class="brand" href="{% url 'cities:list' %}">
-        <span class="brand__icon">🌍</span>
+        <span class="brand__mark" aria-hidden="true">🌍</span>
         <span>Dunyo shaharlari</span>
       </a>
-      <nav class="nav">
-        <a href="{% url 'cities:list' %}">Shaharlar</a>
-        <a href="{% url 'cities:country_list' %}">Mamlakatlar</a>
-        <a href="/admin/">Admin</a>
-        <a class="btn btn--primary" href="{% url 'cities:create' %}">+ Shahar qo'shish</a>
+
+      <nav class="nav" aria-label="Asosiy menyu">
+        <a class="nav__link" href="{% url 'cities:list' %}"
+           {% if nav_section == 'cities' %}aria-current="page"{% endif %}>Shaharlar</a>
+        <a class="nav__link" href="{% url 'cities:country_list' %}"
+           {% if nav_section == 'countries' %}aria-current="page"{% endif %}>Mamlakatlar</a>
+        <a class="nav__link" href="/admin/">Admin</a>
+        <a class="btn btn--primary" href="{% url 'cities:create' %}">
+          <span aria-hidden="true">+</span> Shahar qo'shish
+        </a>
+        <button type="button" id="theme-toggle" class="theme-toggle" hidden
+                aria-pressed="false" aria-label="Qorong'i rejimga o'tish">
+          <span class="icon-light" aria-hidden="true">🌙</span>
+          <span class="icon-dark" aria-hidden="true">☀️</span>
+        </button>
       </nav>
     </div>
   </header>
 
-  <main class="container">
-    {% if messages %}
-      <ul class="messages">
-        {% for message in messages %}
-          <li class="message message--{{ message.tags }}">{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
+  <main id="main" class="container" tabindex="-1">
+    {# role="status" - xabar paydo bo'lganda skrinrider uni o'qiydi #}
+    <div role="status" aria-live="polite">
+      {% if messages %}
+        <ul class="messages">
+          {% for message in messages %}
+            <li class="message message--{{ message.tags }}">
+              <span aria-hidden="true">{% if message.tags == 'error' %}⚠{% else %}✓{% endif %}</span>
+              <span>{{ message }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
 
     {% block content %}{% endblock %}
   </main>
 
   <footer class="footer">
     <div class="container">
-      Dunyo shaharlari ma'lumotnomasi &middot; Django {% now "Y" %}
+      Dunyo shaharlari ma'lumotnomasi &middot; Django &middot; {% now "Y" %}
     </div>
   </footer>
+
+  <script src="{% static 'js/theme.js' %}"></script>
 </body>
 </html>

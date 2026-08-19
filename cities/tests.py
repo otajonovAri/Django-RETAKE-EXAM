@@ -122,3 +122,87 @@ class CityModelTests(TestCase):
         City.objects.create(name="Xiva", population=93_000, country=uz)
         uz.delete()
         self.assertEqual(City.objects.count(), 0)
+
+
+class AccessibilityTests(TestCase):
+    """WCAG 2.1 AA bo'yicha tuzatilgan joylar regressiyaga uchramasligi uchun."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.uz = Country.objects.create(name="O'zbekiston", code="UZ")
+        cls.city = City.objects.create(
+            name="Toshkent", population=2_900_000, country=cls.uz, is_capital=True
+        )
+
+    def test_page_declares_language(self):
+        html = self.client.get(reverse("cities:list")).content.decode()
+        self.assertIn('<html lang="uz"', html)
+
+    def test_skip_link_is_first_focusable_and_targets_main(self):
+        html = self.client.get(reverse("cities:list")).content.decode()
+        self.assertIn('class="skip-link" href="#main"', html)
+        self.assertIn('id="main"', html)
+
+    def test_nav_has_accessible_name_and_current_page(self):
+        html = self.client.get(reverse("cities:list")).content.decode()
+        self.assertIn('aria-label="Asosiy menyu"', html)
+        self.assertIn('aria-current="page"', html)
+
+    def test_messages_are_in_live_region(self):
+        html = self.client.get(reverse("cities:list")).content.decode()
+        self.assertIn('role="status"', html)
+        self.assertIn('aria-live="polite"', html)
+
+    def test_country_filter_does_not_auto_submit(self):
+        """3.2.2 - tanlash o'zi sahifani yubormasligi kerak."""
+        html = self.client.get(reverse("cities:list")).content.decode()
+        self.assertNotIn("this.form.submit()", html)
+        self.assertNotIn("onchange", html)
+
+    def test_sortable_headers_expose_aria_sort(self):
+        html = self.client.get(reverse("cities:list"), {"sort": "-population"}).content.decode()
+        self.assertIn('aria-sort="descending"', html)
+        self.assertIn('aria-sort="none"', html)
+
+    def test_table_has_caption_and_row_headers(self):
+        html = self.client.get(reverse("cities:list")).content.decode()
+        self.assertIn("<caption>", html)
+        self.assertIn('<th scope="col"', html)
+        self.assertIn('<th scope="row"', html)
+
+    def test_row_action_links_have_unique_accessible_names(self):
+        html = self.client.get(reverse("cities:list")).content.decode()
+        self.assertIn('<span class="visually-hidden">: Toshkent</span>', html)
+
+    def test_invalid_field_is_marked_and_described(self):
+        """3.3.1 / 4.1.2 - xato maydon aria orqali bog'lanadi."""
+        response = self.client.post(
+            reverse("cities:create"),
+            {"name": "", "country": self.uz.pk, "population": ""},
+        )
+        html = response.content.decode()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('aria-invalid="true"', html)
+        self.assertIn('aria-describedby="id_name_error"', html)
+        self.assertIn('id="id_name_error"', html)
+        self.assertIn('role="alert"', html)
+
+    def test_required_fields_expose_required_attribute(self):
+        html = self.client.get(reverse("cities:create")).content.decode()
+        self.assertIn("required", html)
+        self.assertIn("(majburiy maydon)", html)
+
+    def test_help_text_is_associated_with_input(self):
+        html = self.client.get(reverse("cities:create")).content.decode()
+        self.assertIn('aria-describedby="id_population_helptext"', html)
+        self.assertIn('id="id_population_helptext"', html)
+
+    def test_population_min_matches_server_validation(self):
+        html = self.client.get(reverse("cities:create")).content.decode()
+        self.assertIn('min="1"', html)
+
+    def test_pagination_nav_is_labelled(self):
+        for i in range(20):
+            City.objects.create(name=f"Shahar {i}", population=1000 + i, country=self.uz)
+        html = self.client.get(reverse("cities:list")).content.decode()
+        self.assertIn('aria-label="Sahifalar"', html)

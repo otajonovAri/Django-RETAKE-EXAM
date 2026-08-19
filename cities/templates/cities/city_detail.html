@@ -1,24 +1,29 @@
 {% extends "base.html" %}
+{% load humanize %}
 
-{% block title %}{{ city.name }}{% endblock %}
+{% block title %}{{ city.name }} — Dunyo shaharlari{% endblock %}
 
 {% block content %}
 <div class="page-head">
-  <h1>{{ city.name }} {% if city.is_capital %}<span class="badge">Poytaxt</span>{% endif %}</h1>
-  <p class="muted">
-    <a href="{% url 'cities:list' %}?country={{ city.country.pk }}" class="link-strong">{{ city.country.name }}</a>
-    {% if city.country.code %}({{ city.country.code }}){% endif %}
+  <h1>
+    {{ city.name }}
+    {% if city.is_capital %}<span class="badge">Poytaxt</span>{% endif %}
+  </h1>
+  <p>
+    <a href="{% url 'cities:list' %}?country={{ city.country.pk }}">
+      {{ city.country.name }} shaharlarini ko'rish
+    </a>
   </p>
 </div>
 
 <div class="card">
   <dl class="detail">
     <dt>Shahar nomi</dt><dd>{{ city.name }}</dd>
-    <dt>Mamlakat</dt><dd>{{ city.country.name }}</dd>
-    <dt>Aholisi</dt><dd>{{ city.population|floatformat:0 }} kishi</dd>
+    <dt>Mamlakat</dt><dd>{{ city.country.name }}{% if city.country.code %} ({{ city.country.code }}){% endif %}</dd>
+    <dt>Aholisi</dt><dd class="num">{{ city.population|intcomma }} kishi</dd>
     <dt>Poytaxt</dt><dd>{% if city.is_capital %}Ha{% else %}Yo'q{% endif %}</dd>
-    <dt>Qo'shilgan</dt><dd>{{ city.created_at|date:"d.m.Y H:i" }}</dd>
-    <dt>O'zgartirilgan</dt><dd>{{ city.updated_at|date:"d.m.Y H:i" }}</dd>
+    <dt>Qo'shilgan</dt><dd><time datetime="{{ city.created_at|date:'c' }}">{{ city.created_at|date:"d.m.Y H:i" }}</time></dd>
+    <dt>O'zgartirilgan</dt><dd><time datetime="{{ city.updated_at|date:'c' }}">{{ city.updated_at|date:"d.m.Y H:i" }}</time></dd>
   </dl>
 
   <div class="form__actions">

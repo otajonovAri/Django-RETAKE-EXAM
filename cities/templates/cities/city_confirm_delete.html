@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load humanize %}
 
-{% block title %}{{ city.name }} — o'chirish{% endblock %}
+{% block title %}{{ city.name }} shahrini o'chirish — Dunyo shaharlari{% endblock %}
 
 {% block content %}
 <div class="page-head">
@@ -8,15 +9,18 @@
 </div>
 
 <div class="card">
-  <p>
-    <strong>«{{ city.name }}»</strong> ({{ city.country.name }}) shahrini
-    o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.
-  </p>
+  <div class="form-errors" role="alert">
+    <h2>Bu amalni qaytarib bo'lmaydi</h2>
+    <p>
+      <strong>{{ city.name }}</strong> ({{ city.country.name }},
+      {{ city.population|intcomma }} kishi) butunlay o'chiriladi.
+    </p>
+  </div>
 
   <form method="post" class="form__actions">
     {% csrf_token %}
     <button class="btn btn--danger" type="submit">Ha, o'chirilsin</button>
-    <a class="btn btn--ghost" href="{% url 'cities:list' %}">Bekor qilish</a>
+    <a class="btn" href="{% url 'cities:detail' city.pk %}">Bekor qilish</a>
   </form>
 </div>
 {% endblock %}

@@ -15,13 +15,32 @@ jadval ko'rinishidagi veb-interfeys.
 
 Qo'shimcha: nom/mamlakat bo'yicha qidiruv, ustunlar bo'yicha saralash,
 sahifalash (15 tadan), statistika, mamlakatlar kesimi, Django admin paneli,
-13 ta avtomatik test.
+yorug'/qorong'i rejim va **26 ta avtomatik test**.
+
+## ♿ Foydalanish qulayligi (WCAG 2.1 AA)
+
+Interfeys `/accessibility-review` bo'yicha tekshirilgan va tuzatilgan:
+
+- **Kontrast:** barcha matnlar >= 4.5:1, chegaralar >= 3:1 — ikkala rejimda
+  brauzerda hisoblab tasdiqlangan (eng past qiymat 4.83:1).
+- **Klaviatura:** skip-link, ko'rinadigan fokus halqasi (`:focus-visible`),
+  musbat `tabindex` ishlatilmagan, filtr o'zi yuborilmaydi (3.2.2).
+- **Skrinrider:** `<caption>`, `scope="col|row"`, `aria-sort`, jonli xabar
+  hududi (`role="status"`), har bir amal havolasining nomi noyob.
+- **Formalar:** `required`, `aria-invalid`, `aria-describedby` orqali xato va
+  izoh maydonga bog'langan; xatolar `role="alert"` bilan e'lon qilinadi.
+- **Moslashuvchanlik:** sahifa gorizontal skroll qilmaydi, keng jadval o'z
+  qutisi ichida suriladi; bosish maydonlari >= 24px (asosiylari 44px).
+- **Harakat:** `prefers-reduced-motion` hurmat qilinadi.
+
+Bu talablar `cities/tests.py` ichidagi `AccessibilityTests` sinfida qulflangan.
 
 ## 🛠 Texnologiyalar
 
 - **Backend:** Python 3.12, Django 5.2
 - **Ma'lumotlar bazasi:** SQLite (Django ORM)
-- **Frontend:** Django Template (Jinja-ga o'xshash) + o'z CSS'i (tashqi CDN'siz)
+- **Frontend:** Django Template + o'z dizayn tizimi (tashqi CDN'siz, offline ishlaydi)
+- **UI:** yorug'/qorong'i rejim, responsiv jadval, WCAG 2.1 AA muvofiqligi
 
 ## 📦 O'rnatish va ishga tushirish
 
@@ -50,8 +69,12 @@ Keyin <http://127.0.0.1:8000/admin/> manzilida kiring.
 python manage.py test
 ```
 
-13 ta test: CRUD amallari, mamlakat bo'yicha filtr, qidiruv, saralash,
-takroriy shahar nomini rad etish va model xatti-harakatlari.
+26 ta test:
+
+- **CRUD va biznes-mantiq (13 ta):** qo'shish/tahrirlash/o'chirish, mamlakat
+  bo'yicha filtr, qidiruv, saralash, takroriy shahar nomini rad etish.
+- **Foydalanish qulayligi (13 ta):** skip-link, ARIA atributlari, `aria-sort`,
+  jonli xabar hududi, forma xatolarining bog'lanishi va h.k.
 
 ## 🔗 Sahifalar
 
@@ -89,15 +112,17 @@ DJango-RETAKE EXAM/
 │   │   └── seed_cities.py    # Namuna ma'lumotlar
 │   ├── migrations/
 │   ├── templates/
-│   │   ├── base.html
-│   │   └── cities/           # list / detail / form / delete
+│   │   ├── base.html         # Skip-link, nav, jonli xabarlar
+│   │   └── cities/           # list / detail / form / delete / _field
 │   ├── admin.py
 │   ├── forms.py
 │   ├── models.py
 │   ├── tests.py
 │   ├── urls.py
 │   └── views.py
-├── static/css/style.css      # Interfeys uslublari
+├── static/
+│   ├── css/style.css         # Dizayn tizimi (light + dark)
+│   └── js/theme.js           # Rejim almashtirgichi
 ├── DescriptionProject.txt    # Topshiriq matni
 ├── manage.py
 ├── requirements.txt
