@@ -400,6 +400,19 @@ input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent-s
 
 .btn--sm { padding: 0 13px; font-size: 14px; }
 
+/* ---------- Eksport paneli ---------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.toolbar__label { margin: 0; font-size: 14px; color: var(--muted); }
+.toolbar__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
 /* ---------- Jadval ---------- */
 
 .table-wrap {
@@ -566,7 +579,7 @@ a.sort-btn { text-decoration: none; }
   text-align: center;
 }
 .empty__icon { font-size: 40px; line-height: 1; }
-.empty h2 { margin: 12px 0 6px; font-size: 18px; }
+.empty h1, .empty h2 { margin: 12px 0 6px; font-size: 20px; letter-spacing: -.01em; }
 .empty p { margin: 0 auto 20px; max-width: 44ch; color: var(--muted); }
 
 .pagination { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 22px; }

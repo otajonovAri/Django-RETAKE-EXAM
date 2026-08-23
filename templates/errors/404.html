@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}404 — Sahifa topilmadi{% endblock %}
+
+{% block content %}
+<div class="empty">
+  <p class="empty__icon" aria-hidden="true">🧭</p>
+  <h1>404 — Sahifa topilmadi</h1>
+  <p>Siz izlagan sahifa mavjud emas yoki ko'chirilgan bo'lishi mumkin.</p>
+  <a class="btn btn--primary" href="{% url 'cities:list' %}">Bosh sahifaga qaytish</a>
+</div>
+{% endblock %}

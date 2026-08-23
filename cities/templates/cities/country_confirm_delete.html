@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ country.name }} mamlakatini o'chirish — Dunyo shaharlari{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>Mamlakatni o'chirish</h1>
+</div>
+
+<div class="card">
+  <div class="form-errors" role="alert">
+    <h2>Bu amalni qaytarib bo'lmaydi</h2>
+    {% if city_count %}
+      <p>
+        <strong>{{ country.name }}</strong> bilan birga unga tegishli
+        <strong>{{ city_count|intcomma }} ta shahar</strong> ham butunlay o'chiriladi.
+      </p>
+    {% else %}
+      <p><strong>{{ country.name }}</strong> o'chiriladi. Unga bog'langan shahar yo'q.</p>
+    {% endif %}
+  </div>
+
+  {% if cities_preview %}
+    <p class="muted">O'chiriladigan shaharlar: {{ cities_preview }}</p>
+  {% endif %}
+
+  <form method="post" class="form__actions">
+    {% csrf_token %}
+    <button class="btn btn--danger" type="submit">Ha, o'chirilsin</button>
+    <a class="btn" href="{% url 'cities:country_detail' country.pk %}">Bekor qilish</a>
+  </form>
+</div>
+{% endblock %}

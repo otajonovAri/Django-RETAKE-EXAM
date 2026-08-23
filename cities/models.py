@@ -22,6 +22,9 @@ class Country(models.Model):
     def __str__(self):
         return self.name
 
+    def get_absolute_url(self):
+        return reverse("cities:country_detail", args=[self.pk])
+
     @property
     def total_population(self):
         return sum(city.population for city in self.cities.all())

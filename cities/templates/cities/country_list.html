@@ -26,7 +26,9 @@
       {% for country in countries %}
       <tr>
         <td class="muted num">{{ forloop.counter }}</td>
-        <th scope="row">{{ country.name }}</th>
+        <th scope="row">
+          <a class="link-strong" href="{% url 'cities:country_detail' country.pk %}">{{ country.name }}</a>
+        </th>
         <td>
           {% if country.code %}
             <span class="chip__code">{{ country.code }}</span>
@@ -38,8 +40,11 @@
         <td class="num">{{ country.population_sum|default:0|intcomma }}</td>
         <td class="col-actions">
           <div class="row-actions">
-            <a class="btn btn--sm" href="{% url 'cities:list' %}?country={{ country.pk }}">
-              Shaharlari<span class="visually-hidden">: {{ country.name }}</span>
+            <a class="btn btn--sm" href="{% url 'cities:country_update' country.pk %}">
+              Tahrirlash<span class="visually-hidden">: {{ country.name }}</span>
+            </a>
+            <a class="btn btn--sm btn--danger" href="{% url 'cities:country_delete' country.pk %}">
+              O'chirish<span class="visually-hidden">: {{ country.name }}</span>
             </a>
           </div>
         </td>

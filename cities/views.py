@@ -1,6 +1,11 @@
+import csv
+from datetime import date
+
 from django.contrib import messages
 from django.db.models import Count, Q, Sum
-from django.urls import reverse_lazy
+from django.http import HttpResponse
+from django.shortcuts import render
+from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -28,6 +33,49 @@ SORTABLE_COLUMNS = (
     ("population", "Aholisi", True),
 )
 
+EXPORT_HEADERS = ["Shahar", "Mamlakat", "ISO kodi", "Aholisi", "Poytaxt"]
+
+
+def filter_cities(params):
+    """Ro'yxat va eksport bir xil filtrdan foydalanishi uchun umumiy funksiya.
+
+    `params` — `request.GET` (QueryDict). Mamlakat, qidiruv va saralash
+    parametrlari qo'llanadi.
+    """
+    queryset = City.objects.select_related("country")
+
+    country_id = params.get("country")
+    if country_id and country_id.isdigit():
+        queryset = queryset.filter(country_id=int(country_id))
+
+    query = params.get("q", "").strip()
+    if query:
+        queryset = queryset.filter(
+            Q(name__icontains=query) | Q(country__name__icontains=query)
+        )
+
+    sort = params.get("sort", "")
+    if sort in SORT_FIELDS:
+        queryset = queryset.order_by(SORT_FIELDS[sort])
+
+    return queryset
+
+
+def city_export_rows(queryset):
+    """Eksport uchun qatorlar generatori."""
+    for city in queryset:
+        yield [
+            city.name,
+            city.country.name,
+            city.country.code or "",
+            city.population,
+            "Ha" if city.is_capital else "Yo'q",
+        ]
+
+
+def _export_filename(extension):
+    return f"shaharlar-{date.today():%Y-%m-%d}.{extension}"
+
 
 class CityListView(ListView):
     """Shaharlar ro'yxati - jadval ko'rinishida, mamlakat bo'yicha filtrlanadi."""
@@ -38,23 +86,7 @@ class CityListView(ListView):
     paginate_by = 15
 
     def get_queryset(self):
-        queryset = City.objects.select_related("country")
-
-        country_id = self.request.GET.get("country")
-        if country_id and country_id.isdigit():
-            queryset = queryset.filter(country_id=int(country_id))
-
-        query = self.request.GET.get("q", "").strip()
-        if query:
-            queryset = queryset.filter(
-                Q(name__icontains=query) | Q(country__name__icontains=query)
-            )
-
-        sort = self.request.GET.get("sort", "")
-        if sort in SORT_FIELDS:
-            queryset = queryset.order_by(SORT_FIELDS[sort])
-
-        return queryset
+        return filter_cities(self.request.GET)
 
     def _sort_headers(self, sort, base_params):
         """Har bir ustun uchun aria-sort holati va keyingi saralash havolasi."""
@@ -115,6 +147,7 @@ class CityListView(ListView):
             "total_population": filtered.aggregate(total=Sum("population"))["total"] or 0,
             "is_filtered": bool(selected_country or query),
             "querystring": page_params.urlencode(),
+            "export_querystring": page_params.urlencode(),
             "sort_headers": self._sort_headers(sort, base_params),
         })
         return context
@@ -187,14 +220,178 @@ class CountryListView(ListView):
         ).order_by("-city_count", "name")
 
 
+class CountryDetailView(DetailView):
+    """Bitta mamlakat va uning shaharlari."""
+
+    model = Country
+    template_name = "cities/country_detail.html"
+    context_object_name = "country"
+    extra_context = {"nav_section": "countries"}
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cities = self.object.cities.order_by("-population")
+        context["cities"] = cities
+        context["city_count"] = cities.count()
+        context["population_sum"] = (
+            cities.aggregate(total=Sum("population"))["total"] or 0
+        )
+        context["capital"] = cities.filter(is_capital=True).first()
+        return context
+
+
 class CountryCreateView(CreateView):
     model = Country
     form_class = CountryForm
     template_name = "cities/country_form.html"
     success_url = reverse_lazy("cities:country_list")
-    extra_context = {"nav_section": "countries"}
+    extra_context = {
+        "title": "Yangi mamlakat qo'shish",
+        "submit_label": "Qo'shish",
+        "nav_section": "countries",
+    }
 
     def form_valid(self, form):
         response = super().form_valid(form)
         messages.success(self.request, f"«{self.object.name}» mamlakati qo'shildi.")
         return response
+
+
+class CountryUpdateView(UpdateView):
+    model = Country
+    form_class = CountryForm
+    template_name = "cities/country_form.html"
+    extra_context = {
+        "title": "Mamlakatni tahrirlash",
+        "submit_label": "Saqlash",
+        "nav_section": "countries",
+    }
+
+    def get_success_url(self):
+        return reverse("cities:country_detail", args=[self.object.pk])
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f"«{self.object.name}» yangilandi.")
+        return response
+
+
+class CountryDeleteView(DeleteView):
+    """Mamlakatni o'chirish.
+
+    Mamlakat o'chirilsa, unga bog'liq barcha shaharlar ham o'chadi (CASCADE),
+    shuning uchun tasdiqlash sahifasida nechta shahar yo'qolishi aytiladi.
+    """
+
+    model = Country
+    template_name = "cities/country_confirm_delete.html"
+    success_url = reverse_lazy("cities:country_list")
+    context_object_name = "country"
+    extra_context = {"nav_section": "countries"}
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        names = list(self.object.cities.order_by("name").values_list("name", flat=True))
+        context["city_count"] = len(names)
+        preview = ", ".join(names[:8])
+        if len(names) > 8:
+            preview += f" va yana {len(names) - 8} ta"
+        context["cities_preview"] = preview
+        return context
+
+    def form_valid(self, form):
+        city_count = self.object.cities.count()
+        name = self.object.name
+        response = super().form_valid(form)
+        if city_count:
+            messages.success(
+                self.request,
+                f"«{name}» va unga tegishli {city_count} ta shahar o'chirildi.",
+            )
+        else:
+            messages.success(self.request, f"«{name}» mamlakati o'chirildi.")
+        return response
+
+
+# ------------------------------------------------------------------ eksport
+
+
+def export_cities_csv(request):
+    """Filtrlangan shaharlarni CSV holida yuklab beradi (Excel uchun BOM bilan)."""
+    queryset = filter_cities(request.GET)
+
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{_export_filename("csv")}"'
+    )
+    # BOM - Excel UTF-8 ni to'g'ri tanishi uchun.
+    response.write("\ufeff")
+
+    writer = csv.writer(response, delimiter=";")
+    writer.writerow(EXPORT_HEADERS)
+    for row in city_export_rows(queryset):
+        writer.writerow(row)
+
+    return response
+
+
+def export_cities_xlsx(request):
+    """Filtrlangan shaharlarni .xlsx holida yuklab beradi."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    queryset = filter_cities(request.GET)
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Shaharlar"
+
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill("solid", start_color="4338CA")
+
+    sheet.append(EXPORT_HEADERS)
+    for cell in sheet[1]:
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+
+    for row in city_export_rows(queryset):
+        sheet.append(row)
+
+    # Aholi ustunini raqam formatida ko'rsatamiz.
+    for row in sheet.iter_rows(min_row=2, min_col=4, max_col=4):
+        for cell in row:
+            cell.number_format = "#,##0"
+
+    widths = [22, 22, 10, 14, 10]
+    for index, width in enumerate(widths, start=1):
+        sheet.column_dimensions[get_column_letter(index)].width = width
+
+    sheet.freeze_panes = "A2"
+
+    response = HttpResponse(
+        content_type=(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="{_export_filename("xlsx")}"'
+    )
+    workbook.save(response)
+    return response
+
+
+# ------------------------------------------------------------ xato sahifalari
+
+
+def error_404(request, exception=None):
+    return render(request, "errors/404.html", status=404)
+
+
+def error_403(request, exception=None):
+    return render(request, "errors/403.html", status=403)
+
+
+def error_500(request):
+    return render(request, "errors/500.html", status=500)

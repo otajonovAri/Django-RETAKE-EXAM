@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}500 — Serverda xatolik{% endblock %}
+
+{% block content %}
+<div class="empty">
+  <p class="empty__icon" aria-hidden="true">⚠</p>
+  <h1>500 — Serverda xatolik</h1>
+  <p>Kutilmagan xatolik yuz berdi. Biroz keyinroq qayta urinib ko'ring.</p>
+  <a class="btn btn--primary" href="{% url 'cities:list' %}">Bosh sahifaga qaytish</a>
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ country.name }} — Dunyo shaharlari{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>
+    {{ country.name }}
+    {% if country.code %}<span class="chip__code">{{ country.code }}</span>{% endif %}
+  </h1>
+  <p>Ushbu mamlakatga kiritilgan shaharlar va ularning umumiy ko'rsatkichlari.</p>
+</div>
+
+<ul class="stats">
+  <li class="stat">
+    <span class="stat__value">{{ city_count|intcomma }}</span>
+    <span class="stat__label">Shaharlar</span>
+  </li>
+  <li class="stat">
+    <span class="stat__value">{{ population_sum|intcomma }}</span>
+    <span class="stat__label">Umumiy aholi</span>
+  </li>
+  <li class="stat">
+    <span class="stat__value">{% if capital %}{{ capital.name }}{% else %}—{% endif %}</span>
+    <span class="stat__label">Poytaxti</span>
+  </li>
+</ul>
+
+{% if cities %}
+<div class="table-wrap">
+  <table class="table">
+    <caption>{{ country.name }} shaharlari — aholisi bo'yicha kamayish tartibida.</caption>
+    <thead>
+      <tr>
+        <th scope="col"><span class="visually-hidden">Tartib raqami</span><span aria-hidden="true">#</span></th>
+        <th scope="col">Shahar nomi</th>
+        <th scope="col" class="num">Aholisi</th>
+        <th scope="col">Holati</th>
+        <th scope="col" class="col-actions">Amallar</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for city in cities %}
+      <tr>
+        <td class="muted num">{{ forloop.counter }}</td>
+        <th scope="row">
+          <a class="link-strong" href="{% url 'cities:detail' city.pk %}">{{ city.name }}</a>
+        </th>
+        <td class="num">{{ city.population|intcomma }}</td>
+        <td>
+          {% if city.is_capital %}
+            <span class="badge">Poytaxt</span>
+          {% else %}
+            <span class="muted">Oddiy shahar</span>
+          {% endif %}
+        </td>
+        <td class="col-actions">
+          <div class="row-actions">
+            <a class="btn btn--sm" href="{% url 'cities:update' city.pk %}">
+              Tahrirlash<span class="visually-hidden">: {{ city.name }}</span>
+            </a>
+            <a class="btn btn--sm btn--danger" href="{% url 'cities:delete' city.pk %}">
+              O'chirish<span class="visually-hidden">: {{ city.name }}</span>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">
+  <p class="empty__icon" aria-hidden="true">🏙️</p>
+  <h2>Bu mamlakatda shahar yo'q</h2>
+  <p>{{ country.name }} uchun hali birorta shahar kiritilmagan.</p>
+  <a class="btn btn--primary" href="{% url 'cities:create' %}">Shahar qo'shish</a>
+</div>
+{% endif %}
+
+<div class="form__actions">
+  <a class="btn btn--primary" href="{% url 'cities:country_update' country.pk %}">Mamlakatni tahrirlash</a>
+  <a class="btn btn--danger" href="{% url 'cities:country_delete' country.pk %}">Mamlakatni o'chirish</a>
+  <a class="btn" href="{% url 'cities:list' %}?country={{ country.pk }}">Filtrlangan ro'yxatda ochish</a>
+  <a class="btn btn--ghost" href="{% url 'cities:country_list' %}">Mamlakatlarga qaytish</a>
+</div>
+{% endblock %}

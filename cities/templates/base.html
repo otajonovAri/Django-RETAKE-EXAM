@@ -36,6 +36,7 @@
            {% if nav_section == 'cities' %}aria-current="page"{% endif %}>Shaharlar</a>
         <a class="nav__link" href="{% url 'cities:country_list' %}"
            {% if nav_section == 'countries' %}aria-current="page"{% endif %}>Mamlakatlar</a>
+        <a class="nav__link" href="{% url 'swagger-ui' %}">API</a>
         <a class="nav__link" href="/admin/">Admin</a>
         <a class="btn btn--primary" href="{% url 'cities:create' %}">
           <span aria-hidden="true">+</span> Shahar qo'shish

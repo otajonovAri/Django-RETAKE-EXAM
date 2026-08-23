@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}403 — Ruxsat yo'q{% endblock %}
+
+{% block content %}
+<div class="empty">
+  <p class="empty__icon" aria-hidden="true">🔒</p>
+  <h1>403 — Ruxsat yo'q</h1>
+  <p>Bu sahifani ko'rish uchun tegishli huquqingiz yo'q.</p>
+  <a class="btn btn--primary" href="{% url 'cities:list' %}">Bosh sahifaga qaytish</a>
+</div>
+{% endblock %}
