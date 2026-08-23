@@ -1,0 +1,8 @@
+.venv\Scripts\Activate.ps1 -> entring env
+
+.venv\Scripts\python.exe manage.py createadmin -> admin create
+
+
+.venv\Scripts\python.exe manage.py createadmin --reset-password --password "yangiParol123" -> reset password
+
+.venv\Scripts\python.exe manage.py runserver -> runner server

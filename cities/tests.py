@@ -519,3 +519,155 @@ class ErrorPageTests(TestCase):
     def test_404_page_uses_site_layout(self):
         response = self.client.get("/bunday-sahifa-yoq/")
         self.assertContains(response, "Dunyo shaharlari", status_code=404)
+
+
+@override_settings(DEBUG=True)
+class CreateAdminCommandTests(TestCase):
+    """`createadmin` buyrug'i — admin foydalanuvchi yaratish.
+
+    Django test paytida DEBUG=False qiladi, buyruq esa bunday holatda
+    standart parolni rad etadi. Shuning uchun ishlab chiqish holatini
+    ataylab qaytaramiz; production xatti-harakati alohida tekshiriladi.
+    """
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        self.User = get_user_model()
+
+    def _run(self, **kwargs):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out, err = StringIO(), StringIO()
+        call_command("createadmin", stdout=out, stderr=err, **kwargs)
+        return out.getvalue(), err.getvalue()
+
+    def test_creates_superuser_with_defaults(self):
+        out, _ = self._run()
+        user = self.User.objects.get(username="admin")
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.check_password("admin12345"))
+        self.assertIn("Admin yaratildi", out)
+
+    def test_is_idempotent(self):
+        self._run()
+        out, _ = self._run()
+        self.assertEqual(self.User.objects.filter(username="admin").count(), 1)
+        self.assertIn("allaqachon mavjud", out)
+
+    def test_reset_password(self):
+        self._run()
+        self._run(password="yangiParol123", reset_password=True)
+        user = self.User.objects.get(username="admin")
+        self.assertTrue(user.check_password("yangiParol123"))
+
+    def test_custom_username_and_password(self):
+        self._run(username="boshqa", password="Parol!2345", email="a@b.uz")
+        user = self.User.objects.get(username="boshqa")
+        self.assertTrue(user.check_password("Parol!2345"))
+        self.assertEqual(user.email, "a@b.uz")
+
+    @override_settings(DEBUG=False)
+    def test_refuses_default_password_in_production(self):
+        _, err = self._run()
+        self.assertIn("standart parol ishlatilmaydi", err)
+        self.assertFalse(self.User.objects.filter(username="admin").exists())
+
+    @override_settings(DEBUG=False)
+    def test_allows_explicit_password_in_production(self):
+        self._run(password="JudaKuchliParol!2026")
+        self.assertTrue(self.User.objects.filter(username="admin").exists())
+
+
+class AdminSiteTests(TestCase):
+    """Admin panel va uning modellari."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="admin12345"
+        )
+        self.uz = Country.objects.create(name="O'zbekiston", code="UZ")
+        City.objects.create(name="Toshkent", population=2_900_000, country=self.uz)
+
+    def test_login_page_is_reachable(self):
+        self.assertEqual(self.client.get("/admin/login/").status_code, 200)
+
+    def test_admin_requires_login(self):
+        response = self.client.get("/admin/cities/city/")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/login/", response["Location"])
+
+    def test_admin_index_lists_both_models(self):
+        self.client.force_login(self.user)
+        response = self.client.get("/admin/")
+        self.assertContains(response, "/admin/cities/city/")
+        self.assertContains(response, "/admin/cities/country/")
+
+    def test_city_changelist_and_search(self):
+        self.client.force_login(self.user)
+        response = self.client.get("/admin/cities/city/", {"q": "Toshkent"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Toshkent")
+
+    def test_country_changelist(self):
+        self.client.force_login(self.user)
+        response = self.client.get("/admin/cities/country/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "O&#x27;zbekiston")
+
+
+class ApiAuthSchemeTests(TestCase):
+    """Swagger'dagi «Authorize» ishlashi uchun sxemada auth e'lon qilinsin."""
+
+    def test_schema_declares_basic_and_cookie_auth(self):
+        import json
+
+        schema = json.loads(self.client.get("/api/schema/?format=json").content)
+        schemes = schema["components"]["securitySchemes"]
+        self.assertIn("basicAuth", schemes)
+        self.assertIn("cookieAuth", schemes)
+
+    def test_basic_auth_allows_write(self):
+        import base64
+
+        from django.contrib.auth import get_user_model
+
+        get_user_model().objects.create_superuser(
+            username="admin", email="a@b.uz", password="admin12345"
+        )
+        country = Country.objects.create(name="Italiya", code="IT")
+
+        token = base64.b64encode(b"admin:admin12345").decode()
+        response = self.client.post(
+            "/api/cities/",
+            {"name": "Rim", "population": 2_800_000, "country": country.pk},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Basic {token}",
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertTrue(City.objects.filter(name="Rim").exists())
+
+    def test_wrong_password_is_rejected(self):
+        import base64
+
+        from django.contrib.auth import get_user_model
+
+        get_user_model().objects.create_superuser(
+            username="admin", email="a@b.uz", password="admin12345"
+        )
+        country = Country.objects.create(name="Italiya", code="IT")
+
+        token = base64.b64encode(b"admin:notogri").decode()
+        response = self.client.post(
+            "/api/cities/",
+            {"name": "Rim", "population": 100, "country": country.pk},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Basic {token}",
+        )
+        self.assertIn(response.status_code, (401, 403))
+        self.assertFalse(City.objects.filter(name="Rim").exists())

@@ -33,7 +33,8 @@ rejim, WCAG 2.1 AA muvofiqligi, Docker va CI.
 | **Xato sahifalari** | Maxsus 404 / 403 / 500 |
 | **Sozlamalar** | `.env` orqali, ishlab chiqarishda xavfsizlik standart yoqiq |
 | **Docker + CI** | `Dockerfile` va GitHub Actions |
-| **Testlar** | **61 ta** avtomatik test |
+| **Admin** | `createadmin` buyrug'i — bir buyruq bilan tayyor login/parol |
+| **Testlar** | **75 ta** avtomatik test |
 
 ---
 
@@ -60,11 +61,23 @@ python manage.py runserver
 
 Brauzerda oching: <http://127.0.0.1:8000/>
 
-Admin panel va API'da yozish uchun foydalanuvchi yarating:
+Admin foydalanuvchi yarating:
 
 ```bash
-python manage.py createsuperuser
+python manage.py createadmin
 ```
+
+| | |
+|---|---|
+| **Login** | `admin` |
+| **Parol** | `admin12345` |
+
+> ⚠️ Bu **faqat ishlab chiqish uchun**. `DEBUG=False` bo'lganda buyruq standart
+> parolni rad etadi — `.env` da `DJANGO_ADMIN_PASSWORD` ni belgilang yoki
+> `--password` bering. Parolni almashtirish:
+> `python manage.py createadmin --reset-password --password "yangiParol"`
+
+Interaktiv variant ham ishlaydi: `python manage.py createsuperuser`
 
 ### Docker bilan
 
@@ -107,7 +120,23 @@ docker build -t dunyo-shaharlari . && docker run -p 8000:8000 dunyo-shaharlari
 | `/api/countries/<id>/cities/` | Shu mamlakat shaharlari |
 
 **Ruxsatlar:** `GET` hamma uchun ochiq; `POST/PUT/PATCH/DELETE` uchun tizimga
-kirish va model ruxsati kerak (`/api-auth/login/` yoki `/admin/` orqali kiring).
+kirish va model ruxsati kerak.
+
+### Swagger'da yozish amallarini sinash
+
+1. `/api/docs/` ni oching.
+2. O'ng yuqoridagi **Authorize** tugmasini bosing.
+3. `basicAuth` bo'limiga `admin` / `admin12345` ni kiriting va **Authorize**.
+4. Endi `POST`, `PUT`, `DELETE` da **Try it out** ishlaydi.
+
+Muqobil yo'l: `/admin/` yoki `/api-auth/login/` orqali kiring — sessiya cookie'si
+Swagger'da ham amal qiladi (`cookieAuth`).
+
+Terminaldan sinash:
+
+```bash
+curl -u admin:admin12345 -X POST http://127.0.0.1:8000/api/cities/ -H "Content-Type: application/json" -d "{\"name\":\"Xiva\",\"population\":93000,\"country\":1}"
+```
 
 **API misollari:**
 
@@ -145,7 +174,7 @@ Bu talablar `cities/tests.py` ichidagi `AccessibilityTests` sinfida qulflangan.
 python manage.py test
 ```
 
-**61 ta test:**
+**75 ta test:**
 
 | Sinf | Soni | Nimani tekshiradi |
 |---|---|---|
@@ -157,6 +186,9 @@ python manage.py test
 | `ExportTests` | 8 | CSV/Excel tuzilishi va filtrga bo'ysunishi |
 | `ApiTests` | 18 | API o'qish/yozish, ruxsatlar, sxema |
 | `ErrorPageTests` | 2 | Maxsus 404 sahifasi |
+| `CreateAdminCommandTests` | 6 | Admin yaratish, idempotentlik, production himoyasi |
+| `AdminSiteTests` | 5 | Admin paneli, kirish talabi, ro'yxatlar |
+| `ApiAuthSchemeTests` | 3 | Swagger auth sxemasi, Basic auth |
 
 Ishlab chiqarish sozlamalarini tekshirish:
 
@@ -190,6 +222,7 @@ tegishli shaharlar ham o'chadi (`CASCADE`).
 | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Vergul bilan |
 | `DJANGO_HTTPS_ONLY` | `True` | `DEBUG=False` da HTTPS majburiy (SSL redirect + HSTS) |
 | `DJANGO_BEHIND_PROXY` | `False` | nginx/Traefik orqasida `True` |
+| `DJANGO_ADMIN_PASSWORD` | `admin12345` | `createadmin` uchun; production'da majburiy |
 
 `DEBUG=False` va `DJANGO_HTTPS_ONLY=True` bo'lganda `check --deploy`
 hech qanday ogohlantirish bermaydi.
@@ -205,7 +238,8 @@ DJango-RETAKE EXAM/
 │   └── urls.py               # veb + API + Swagger
 ├── cities/                   # Asosiy ilova
 │   ├── management/commands/
-│   │   └── seed_cities.py    # Namuna ma'lumotlar
+│   │   ├── seed_cities.py    # Namuna ma'lumotlar
+│   │   └── createadmin.py    # Admin foydalanuvchi
 │   ├── migrations/
 │   ├── templates/
 │   │   ├── base.html         # Skip-link, nav, jonli xabarlar
@@ -215,7 +249,7 @@ DJango-RETAKE EXAM/
 │   ├── forms.py
 │   ├── models.py
 │   ├── serializers.py
-│   ├── tests.py              # 61 ta test
+│   ├── tests.py              # 75 ta test
 │   ├── urls.py
 │   └── views.py              # Veb view'lar + eksport + xato sahifalari
 ├── templates/errors/         # 404 / 403 / 500
